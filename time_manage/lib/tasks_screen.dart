@@ -27,6 +27,8 @@ class _TasksScreenState extends State<TasksScreen> {
   List<Task> tasks = [];
 
   TextEditingController _textEditingController = TextEditingController();
+  TextEditingController _dateEditingController = TextEditingController();
+  TextEditingController _timeEditingController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -49,9 +51,21 @@ class _TasksScreenState extends State<TasksScreen> {
                   ),
                 ),
                 IconButton(
+                  icon: Icon(Icons.calendar_today),
+                  onPressed: () {
+                    _showDatePicker(context);
+                  },
+                ),
+                IconButton(
+                  icon: Icon(Icons.access_time),
+                  onPressed: () {
+                    _showTimePicker(context);
+                  },
+                ),
+                IconButton(
                   icon: Icon(Icons.add),
                   onPressed: () {
-                    _showDateTimePicker();
+                    addTask();
                   },
                 ),
               ],
@@ -73,11 +87,22 @@ class _TasksScreenState extends State<TasksScreen> {
                       'Deadline: ${tasks[index].deadline}',
                       style: TextStyle(fontSize: 14),
                     ),
-                    trailing: IconButton(
-                      icon: Icon(Icons.delete),
-                      onPressed: () {
-                        deleteTask(index);
-                      },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit),
+                          onPressed: () {
+                            _startEditingTask(index);
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () {
+                            deleteTask(index);
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -95,51 +120,56 @@ class _TasksScreenState extends State<TasksScreen> {
     });
   }
 
-  Future<void> _showDateTimePicker() async {
-    DateTime selectedDate = DateTime.now();
-    TimeOfDay selectedTime = TimeOfDay.now();
+  void addTask() {
+    String newTaskName = _textEditingController.text.trim();
+    String deadlineDate = _dateEditingController.text.trim();
+    String deadlineTime = _timeEditingController.text.trim();
+    if (newTaskName.isNotEmpty && deadlineDate.isNotEmpty && deadlineTime.isNotEmpty) {
+      setState(() {
+        tasks.add(Task(name: newTaskName, deadline: '$deadlineDate $deadlineTime'));
+        _textEditingController.clear();
+        _dateEditingController.clear();
+        _timeEditingController.clear();
+      });
+    }
+  }
 
+  void _startEditingTask(int index) {
+    setState(() {
+      _textEditingController.text = tasks[index].name;
+      _dateEditingController.text = tasks[index].deadline.split(' ')[0];
+      _timeEditingController.text = tasks[index].deadline.split(' ')[1];
+    });
+  }
+
+  Future<void> _showDatePicker(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: selectedDate,
+      initialDate: DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2101),
     );
 
     if (pickedDate != null) {
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: selectedTime,
-      );
-
-      if (pickedTime != null) {
-        selectedDate = DateTime(
-          pickedDate.year,
-          pickedDate.month,
-          pickedDate.day,
-          pickedTime.hour,
-          pickedTime.minute,
-        );
-
-        addTask(selectedDate);
-      }
+      _dateEditingController.text = pickedDate.toString().split(' ')[0];
     }
   }
 
-  void addTask(DateTime deadline) {
-    String newTaskName = _textEditingController.text;
-    if (newTaskName.isNotEmpty) {
-      setState(() {
-        tasks.add(Task(name: newTaskName, deadline: deadline));
-        _textEditingController.clear();
-      });
+  Future<void> _showTimePicker(BuildContext context) async {
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (pickedTime != null) {
+      _timeEditingController.text = pickedTime.format(context);
     }
   }
 }
 
 class Task {
-  final String name;
-  final DateTime deadline;
+  String name;
+  final String deadline;
 
   Task({required this.name, required this.deadline});
 }

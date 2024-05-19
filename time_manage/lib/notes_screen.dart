@@ -28,6 +28,48 @@ class _NotesScreenState extends State<NotesScreen> {
     LocalStorage().setItem('notes', notes);
   }
 
+  void _editNoteDialog(int index) {
+    _textEditingController.text = notes[index];
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Редагувати нотатку'),
+          content: TextField(
+            controller: _textEditingController,
+            decoration: InputDecoration(labelText: 'Введіть вашу нотатку'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Відміна'),
+            ),
+            TextButton(
+              onPressed: () {
+                _editNote(index);
+                Navigator.of(context).pop();
+              },
+              child: Text('Зберегти'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _editNote(int index) {
+    String editedNote = _textEditingController.text.trim();
+    if (editedNote.isNotEmpty) {
+      setState(() {
+        notes[index] = editedNote;
+        _saveNotes();
+        _textEditingController.clear();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,9 +88,7 @@ class _NotesScreenState extends State<NotesScreen> {
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                _addNote();
-              },
+              onPressed: _addNote,
               child: Text('Додати нотатку'),
             ),
             SizedBox(height: 20),
@@ -64,6 +104,9 @@ class _NotesScreenState extends State<NotesScreen> {
                         notes[index],
                         style: TextStyle(fontSize: 16),
                       ),
+                      onTap: () {
+                        _editNoteDialog(index);
+                      },
                       trailing: IconButton(
                         icon: Icon(Icons.delete),
                         onPressed: () {
