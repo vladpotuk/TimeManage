@@ -25,10 +25,29 @@ class TasksScreen extends StatefulWidget {
 
 class _TasksScreenState extends State<TasksScreen> {
   List<Task> tasks = [];
-
   TextEditingController _textEditingController = TextEditingController();
   TextEditingController _dateEditingController = TextEditingController();
   TextEditingController _timeEditingController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
+
+  void _loadTasks() {
+    final storedTasks = LocalStorage().getItem('tasks');
+    if (storedTasks != null) {
+      setState(() {
+        tasks = List<Task>.from(storedTasks.map((task) => Task.fromJson(task)));
+      });
+    }
+  }
+
+  void _saveTasks() {
+    List<Map<String, dynamic>> taskJson = tasks.map((task) => task.toJson()).toList();
+    LocalStorage().setItem('tasks', taskJson);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,6 +136,7 @@ class _TasksScreenState extends State<TasksScreen> {
   void deleteTask(int index) {
     setState(() {
       tasks.removeAt(index);
+      _saveTasks();
     });
   }
 
@@ -127,6 +147,7 @@ class _TasksScreenState extends State<TasksScreen> {
     if (newTaskName.isNotEmpty && deadlineDate.isNotEmpty && deadlineTime.isNotEmpty) {
       setState(() {
         tasks.add(Task(name: newTaskName, deadline: '$deadlineDate $deadlineTime'));
+        _saveTasks();
         _textEditingController.clear();
         _dateEditingController.clear();
         _timeEditingController.clear();
@@ -172,4 +193,34 @@ class Task {
   final String deadline;
 
   Task({required this.name, required this.deadline});
+
+  factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      name: json['name'],
+      deadline: json['deadline'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'deadline': deadline,
+    };
+  }
+}
+
+class LocalStorage {
+  static Map<String, dynamic> _storage = {};
+
+  dynamic getItem(String key) {
+    return _storage[key];
+  }
+
+  void setItem(String key, dynamic value) {
+    _storage[key] = value;
+  }
+
+  void removeItem(String key) {
+    _storage.remove(key);
+  }
 }
